@@ -1,0 +1,16 @@
+{
+  "name": "@oskar-codes/ensure",
+  "version": "1.0.1",
+  "description": "Ensure your code",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "author": "Oskar Zanota",
+  "license": "ISC",
+  "dependencies": {
+    "typescript": "^5.9.2"
+  },
+  "type": "module"
+}
