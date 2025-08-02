@@ -1,6 +1,6 @@
 {
   "name": "@oskar-codes/ensure",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Ensure your code",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -12,5 +12,10 @@
   "dependencies": {
     "typescript": "^5.9.2"
   },
-  "type": "module"
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/oskar-codes/ensure.git"
+  },
+  "homepage": "https://github.com/oskar-codes/ensure"
 }
