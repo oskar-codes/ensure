@@ -12,24 +12,23 @@ const t = z;
 ensure(x).is.defined();
 ensure(x).and(y).are.defined();
 
+ensure(x).and(y).are.not.equalTo(z);
+
 ensure(x).and(y).are.different();
+
 ensure(z).and(t).are.equal();
+ensure(z).is.equalTo(t);
+ensure(z).and(t).are.not.different();
 
 ensure(x).is.equalTo(1);
 ensure(z, t).are.equalTo(3);
 
 ensure(x).and(y).and(z).are.inRange(1, 3);
+ensure(x).and(y).and(z).are.not.inRange(4, 5);
 
 ensure(x === 1).is.true();
+ensure(x === 1).is.not.false();
 
-ensure(x === 2).is.false();
+ensure(x, y).and(z).are.not.equal();
 
 ```
-
-## Missing features
-- Negation, for example as follows:
-  ```ts
-  ensure(x).is.not.defined();
-  ensure(x).and(y).are.not.inRange(1, 10);
-  ```
-- 
