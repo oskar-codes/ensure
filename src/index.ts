@@ -37,52 +37,37 @@ class Ensurable {
   }
 
   static ENSURANCES = {
-    true: new Ensurance({
-      predicate: (_, v) => v === true,
-      message: ctx => `Expected <${ctx.values}> to be true.`
-    }),
-    false: new Ensurance({
-      predicate: (_, v) => v === false,
-      message: ctx => `Expected <${ctx.values}> to be false.`
-    }),
-    equalTo: new Ensurance({
-      predicate: (_, v, o) => v === o,
-      message: ctx => `Expected <${ctx.values}> to be equal to <${ctx.args.at(0)}>.`
-    }),
-    inRange: new Ensurance({
-      predicate: (_, v, a, b) => v >= a && v <= b,
-      message: ctx => `Expected <${ctx.values}> to be in [${ctx.args.at(0)}, ${ctx.args.at(1)}].`
-    }),
-    defined: new Ensurance({
-      predicate: (_, v) => v !== undefined && v !== null,
-      message: ctx => `Expected <${ctx.values}> to be defined.`
-    }),
-    equal: new Ensurance({
-      predicate: (ctx, v) => v === ctx.values[0],
-      message: ctx => `Expected <${ctx.values}> to be equal.`
-    }),
-    different: new Ensurance({
-      predicate: (ctx, v) => new Set(ctx.values).size === ctx.values.length,
-      message: ctx => `Expected <${ctx.values}> to be different.`
-    })
-  }
-
-  static ENSURANCE_MAP = {
     SINGLE: {
-      true: this.ENSURANCES.true,
-      false: this.ENSURANCES.false,
-      equalTo: this.ENSURANCES.equalTo,
-      inRange: this.ENSURANCES.inRange,
-      defined: this.ENSURANCES.defined
+        true: new Ensurance({
+        predicate: (_, v) => v === true,
+        message: ctx => `Expected <${ctx.values}> to be true.`
+      }),
+      false: new Ensurance({
+        predicate: (_, v) => v === false,
+        message: ctx => `Expected <${ctx.values}> to be false.`
+      }),
+      equalTo: new Ensurance({
+        predicate: (_, v, o) => v === o,
+        message: ctx => `Expected <${ctx.values}> to be equal to <${ctx.args.at(0)}>.`
+      }),
+      inRange: new Ensurance({
+        predicate: (_, v, a, b) => v >= a && v <= b,
+        message: ctx => `Expected <${ctx.values}> to be in [${ctx.args.at(0)}, ${ctx.args.at(1)}].`
+      }),
+      defined: new Ensurance({
+        predicate: (_, v) => v !== undefined && v !== null,
+        message: ctx => `Expected <${ctx.values}> to be defined.`
+      }),
     },
     MULTIPLE: {
-      true: this.ENSURANCES.true,
-      false: this.ENSURANCES.false,
-      equalTo: this.ENSURANCES.equalTo,
-      inRange: this.ENSURANCES.inRange,
-      defined: this.ENSURANCES.defined,
-      equal: this.ENSURANCES.equal,
-      different: this.ENSURANCES.different
+      equal: new Ensurance({
+        predicate: ctx => ctx.values.every(v => v === ctx.values[0]),
+        message: ctx => `Expected <${ctx.values}> to be equal.`
+      }),
+      different: new Ensurance({
+        predicate: ctx => new Set(ctx.values).size === ctx.values.length,
+        message: ctx => `Expected <${ctx.values}> to be different.`
+      })
     }
   }
 
@@ -91,17 +76,31 @@ class Ensurable {
    */
   get are() {
     const that = this;
-    const ensurances = Ensurable.ENSURANCE_MAP.MULTIPLE;
+    const ensurances = {
+      ...Ensurable.ENSURANCES.SINGLE,
+      ...Ensurable.ENSURANCES.MULTIPLE
+    }
 
     const entries = Object.entries(ensurances).map(([name, ensurance]) => {
       return [name, function(...args: any[]) {
-
         const ctx = new EnsuranceContext(that.#values, args);
-        if (!that.#values.every(v => ensurance.predicate(ctx, v, ...args))) {
+
+        const valid = (() => {
+          if (name in Ensurable.ENSURANCES.MULTIPLE) {
+            return ensurance.predicate(ctx, ...args);
+          } else {
+            return that.#values.every(v => ensurance.predicate(ctx, v, ...args));
+          }
+        })();
+
+        if (!valid) {
           throw new Error(ensurance.message(ctx))
         }
+
       }];
     });
+
+    entries
 
     return Object.fromEntries(entries) as {
       [K in keyof typeof ensurances]: (...args: any[]) => void;
@@ -113,7 +112,7 @@ class Ensurable {
    */
   get is() {
     const that = this;
-    const ensurances = Ensurable.ENSURANCE_MAP.SINGLE;
+    const ensurances = Ensurable.ENSURANCES.SINGLE;
 
     const entries = Object.entries(ensurances).map(([name, ensurance]) => {
       return [name, function(...args: any[]) {
