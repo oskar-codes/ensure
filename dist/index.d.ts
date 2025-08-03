@@ -1,48 +1,73 @@
 export declare function ensure(...v: any[]): Ensurable;
+declare class EnsuranceContext {
+    values: any[];
+    args: [];
+    negated: boolean;
+    constructor(values: any[], args: any, negated: boolean);
+    get not(): "not " | "";
+    get each(): "" | "each one of ";
+}
+declare class Ensurance {
+    predicate: (ctx: EnsuranceContext, ...v: any[]) => boolean;
+    message: (ctx: EnsuranceContext) => string;
+    constructor({ predicate, message }: {
+        predicate: (ctx: EnsuranceContext, ...v: any[]) => boolean;
+        message: (ctx: EnsuranceContext) => string;
+    });
+}
 declare class Ensurable {
     #private;
     constructor(values: any[]);
-    /**
-     * Root property ensuring **some** values
-     */
-    get some(): {
-        are: {
-            true(): void;
-            false(): void;
-            equalTo(other: any): void;
-            inRange(a: number, b: number): void;
-            different(): void;
+    static ENSURANCES: {
+        SINGLE: {
+            true: Ensurance;
+            false: Ensurance;
+            equalTo: Ensurance;
+            inRange: Ensurance;
+            defined: Ensurance;
+        };
+        MULTIPLE: {
+            equal: Ensurance;
+            different: Ensurance;
         };
     };
     /**
-     * Root property ensuring **all** values
-     */
-    get all(): {
-        are: {
-            true(): void;
-            false(): void;
-            equalTo(other: any): void;
-            inRange(a: number, b: number): void;
-            equal(): void;
-        };
-    };
-    /**
-     * Shorthands
+     * Used for multiple values
      */
     get are(): {
-        equal(): void;
-        different(): void;
+        not: {
+            equal: (...args: any[]) => void;
+            different: (...args: any[]) => void;
+            true: (...args: any[]) => void;
+            false: (...args: any[]) => void;
+            equalTo: (...args: any[]) => void;
+            inRange: (...args: any[]) => void;
+            defined: (...args: any[]) => void;
+        };
+        equal: (...args: any[]) => void;
+        different: (...args: any[]) => void;
+        true: (...args: any[]) => void;
+        false: (...args: any[]) => void;
+        equalTo: (...args: any[]) => void;
+        inRange: (...args: any[]) => void;
+        defined: (...args: any[]) => void;
     };
     /**
-     * Conceptually the same as some (or all),
-     * but used for a single value
+     * Used for a single value
      */
     get is(): {
-        true(): void;
-        false(): void;
-        equalTo(other: any): void;
-        inRange(a: number, b: number): void;
-        different(): void;
+        not: {
+            true: (...args: any[]) => void;
+            false: (...args: any[]) => void;
+            equalTo: (...args: any[]) => void;
+            inRange: (...args: any[]) => void;
+            defined: (...args: any[]) => void;
+        };
+        true: (...args: any[]) => void;
+        false: (...args: any[]) => void;
+        equalTo: (...args: any[]) => void;
+        inRange: (...args: any[]) => void;
+        defined: (...args: any[]) => void;
     };
     and(...other: any[]): Ensurable;
 }

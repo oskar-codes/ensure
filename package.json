@@ -1,11 +1,12 @@
 {
   "name": "@oskar-codes/ensure",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Ensure your code",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "deploy": "tsc && npm publish"
   },
   "author": "Oskar Zanota",
   "license": "ISC",
@@ -15,7 +16,7 @@
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "https://github.com/oskar-codes/ensure.git"
+    "url": "git+https://github.com/oskar-codes/ensure.git"
   },
   "homepage": "https://github.com/oskar-codes/ensure"
 }

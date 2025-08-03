@@ -48,7 +48,7 @@ class Ensurable {
 
   static ENSURANCES = {
     SINGLE: {
-        true: new Ensurance({
+      true: new Ensurance({
         predicate: (_, v) => v === true,
         message: ctx => `Expected ${ctx.each}<${ctx.values}> to ${ctx.not}be true.`
       }),
