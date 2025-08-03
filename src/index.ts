@@ -6,10 +6,20 @@ export function ensure(...v: any[]) {
 class EnsuranceContext {
   values: any[];
   args: [];
+  negated: boolean;
 
-  constructor(values: any[], args: any) {
+  constructor(values: any[], args: any, negated: boolean) {
     this.values = values;
     this.args = args;
+    this.negated = negated;
+  }
+
+  get not() {
+    return this.negated ? 'not ' : '';
+  }
+
+  get each() {
+    return this.values.length > 1 ? 'each one of ' : '';
   }
 }
 
@@ -40,33 +50,33 @@ class Ensurable {
     SINGLE: {
         true: new Ensurance({
         predicate: (_, v) => v === true,
-        message: ctx => `Expected <${ctx.values}> to be true.`
+        message: ctx => `Expected ${ctx.each}<${ctx.values}> to ${ctx.not}be true.`
       }),
       false: new Ensurance({
         predicate: (_, v) => v === false,
-        message: ctx => `Expected <${ctx.values}> to be false.`
+        message: ctx => `Expected ${ctx.each}<${ctx.values}> to ${ctx.not}be false.`
       }),
       equalTo: new Ensurance({
         predicate: (_, v, o) => v === o,
-        message: ctx => `Expected <${ctx.values}> to be equal to <${ctx.args.at(0)}>.`
+        message: ctx => `Expected ${ctx.each}<${ctx.values}> to ${ctx.not}be equal to <${ctx.args.at(0)}>.`
       }),
       inRange: new Ensurance({
         predicate: (_, v, a, b) => v >= a && v <= b,
-        message: ctx => `Expected <${ctx.values}> to be in [${ctx.args.at(0)}, ${ctx.args.at(1)}].`
+        message: ctx => `Expected ${ctx.each}<${ctx.values}> to ${ctx.not}be in [${ctx.args.at(0)}, ${ctx.args.at(1)}].`
       }),
       defined: new Ensurance({
         predicate: (_, v) => v !== undefined && v !== null,
-        message: ctx => `Expected <${ctx.values}> to be defined.`
+        message: ctx => `Expected ${ctx.each}<${ctx.values}> to ${ctx.not}be defined.`
       }),
     },
     MULTIPLE: {
       equal: new Ensurance({
         predicate: ctx => ctx.values.every(v => v === ctx.values[0]),
-        message: ctx => `Expected <${ctx.values}> to be equal.`
+        message: ctx => `Expected <${ctx.values}> to ${ctx.not}be equal.`
       }),
       different: new Ensurance({
         predicate: ctx => new Set(ctx.values).size === ctx.values.length,
-        message: ctx => `Expected <${ctx.values}> to be different.`
+        message: ctx => `Expected <${ctx.values}> to ${ctx.not}be different.`
       })
     }
   }
@@ -75,6 +85,15 @@ class Ensurable {
    * Used for multiple values
    */
   get are() {
+    return {
+      ...this.#are(false),
+      not: {
+        ...this.#are(true)
+      }
+    }
+  }
+
+  #are(negated: boolean) {
     const that = this;
     const ensurances = {
       ...Ensurable.ENSURANCES.SINGLE,
@@ -83,13 +102,13 @@ class Ensurable {
 
     const entries = Object.entries(ensurances).map(([name, ensurance]) => {
       return [name, function(...args: any[]) {
-        const ctx = new EnsuranceContext(that.#values, args);
+        const ctx = new EnsuranceContext(that.#values, args, negated);
 
         const valid = (() => {
           if (name in Ensurable.ENSURANCES.MULTIPLE) {
-            return ensurance.predicate(ctx, ...args);
+            return negated !== ensurance.predicate(ctx, ...args);
           } else {
-            return that.#values.every(v => ensurance.predicate(ctx, v, ...args));
+            return that.#values.every(v => negated !== ensurance.predicate(ctx, v, ...args));
           }
         })();
 
@@ -100,8 +119,6 @@ class Ensurable {
       }];
     });
 
-    entries
-
     return Object.fromEntries(entries) as {
       [K in keyof typeof ensurances]: (...args: any[]) => void;
     }
@@ -111,13 +128,24 @@ class Ensurable {
    * Used for a single value
    */
   get is() {
+    return {
+      ...this.#is(false),
+      not: {
+        ...this.#is(true)
+      }
+    }
+  }
+
+  #is(negated: boolean) {
     const that = this;
     const ensurances = Ensurable.ENSURANCES.SINGLE;
 
     const entries = Object.entries(ensurances).map(([name, ensurance]) => {
       return [name, function(...args: any[]) {
-        const ctx = new EnsuranceContext([that.#values[0]], args);
-        if (!ensurance.predicate(ctx, that.#values[0], ...args)) {
+        const ctx = new EnsuranceContext([that.#values[0]], args, negated);
+
+        const valid = ensurance.predicate(ctx, that.#values[0], ...args);
+        if (!valid !== negated) {
           throw new Error(ensurance.message(ctx))
         }
       }];
