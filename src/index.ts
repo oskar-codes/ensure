@@ -3,6 +3,32 @@ export function ensure(...v: any[]) {
   return new Ensurable(v);
 }
 
+class EnsuranceContext {
+  values: any[];
+  args: [];
+
+  constructor(values: any[], args: any) {
+    this.values = values;
+    this.args = args;
+  }
+}
+
+class Ensurance {
+  predicate: (ctx: EnsuranceContext, ...v: any[]) => boolean
+  message: (ctx: EnsuranceContext) => string
+
+  constructor({
+    predicate,
+    message
+  }: {
+    predicate: (ctx: EnsuranceContext, ...v: any[]) => boolean,
+    message: (ctx: EnsuranceContext) => string
+  }) {
+    this.predicate = predicate;
+    this.message = message;
+  }
+}
+
 class Ensurable {
   #values: any[];
   
@@ -10,146 +36,96 @@ class Ensurable {
     this.#values = values;
   }
 
-  /**
-   * Root property ensuring **some** values
-   */
-  get some() {
-    const that = this;
-    return {
-      are: {
-        true() {
-          that.#areSomeTrue();
-        },
-        false() {
-          that.#areSomeFalse();
-        },
-        equalTo(other: any) {
-          that.#areSome(other);
-        },
-        inRange(a: number, b: number) {
-          that.#areSomeInRange(a, b)
-        },
-        different() {
-          that.#someDifferent();
-        }
-      }
+  static ENSURANCES = {
+    true: new Ensurance({
+      predicate: (_, v) => v === true,
+      message: ctx => `Expected <${ctx.values}> to be true.`
+    }),
+    false: new Ensurance({
+      predicate: (_, v) => v === false,
+      message: ctx => `Expected <${ctx.values}> to be false.`
+    }),
+    equalTo: new Ensurance({
+      predicate: (_, v, o) => v === o,
+      message: ctx => `Expected <${ctx.values}> to be equal to <${ctx.args.at(0)}>.`
+    }),
+    inRange: new Ensurance({
+      predicate: (_, v, a, b) => v >= a && v <= b,
+      message: ctx => `Expected <${ctx.values}> to be in [${ctx.args.at(0)}, ${ctx.args.at(1)}].`
+    }),
+    defined: new Ensurance({
+      predicate: (_, v) => v !== undefined && v !== null,
+      message: ctx => `Expected <${ctx.values}> to be defined.`
+    }),
+    equal: new Ensurance({
+      predicate: (ctx, v) => v === ctx.values[0],
+      message: ctx => `Expected <${ctx.values}> to be equal.`
+    }),
+    different: new Ensurance({
+      predicate: (ctx, v) => new Set(ctx.values).size === ctx.values.length,
+      message: ctx => `Expected <${ctx.values}> to be different.`
+    })
+  }
+
+  static ENSURANCE_MAP = {
+    SINGLE: {
+      true: this.ENSURANCES.true,
+      false: this.ENSURANCES.false,
+      equalTo: this.ENSURANCES.equalTo,
+      inRange: this.ENSURANCES.inRange,
+      defined: this.ENSURANCES.defined
+    },
+    MULTIPLE: {
+      true: this.ENSURANCES.true,
+      false: this.ENSURANCES.false,
+      equalTo: this.ENSURANCES.equalTo,
+      inRange: this.ENSURANCES.inRange,
+      defined: this.ENSURANCES.defined,
+      equal: this.ENSURANCES.equal,
+      different: this.ENSURANCES.different
     }
   }
 
   /**
-   * Root property ensuring **all** values
-   */
-  get all() {
-    const that = this;
-    return {
-      are: {
-        true() {
-          that.#areAllTrue();
-        },
-        false() {
-          that.#areAllFalse();
-        },
-        equalTo(other: any) {
-          that.#areAll(other);
-        },
-        inRange(a: number, b: number) {
-          that.#areAllInRange(a, b);
-        },
-        equal() {
-          that.#allEqual();
-        },
-      }
-    }
-  }
-
-  /**
-   * Shorthands
+   * Used for multiple values
    */
   get are() {
     const that = this;
-    return {
-      equal() {
-        return that.all.are.equal();
-      },
-      different() {
-        return that.some.are.different();
-      }
+    const ensurances = Ensurable.ENSURANCE_MAP.MULTIPLE;
+
+    const entries = Object.entries(ensurances).map(([name, ensurance]) => {
+      return [name, function(...args: any[]) {
+
+        const ctx = new EnsuranceContext(that.#values, args);
+        if (!that.#values.every(v => ensurance.predicate(ctx, v, ...args))) {
+          throw new Error(ensurance.message(ctx))
+        }
+      }];
+    });
+
+    return Object.fromEntries(entries) as {
+      [K in keyof typeof ensurances]: (...args: any[]) => void;
     }
   }
 
   /**
-   * Conceptually the same as some (or all),
-   * but used for a single value
+   * Used for a single value
    */
   get is() {
-    return this.some.are
-  }
+    const that = this;
+    const ensurances = Ensurable.ENSURANCE_MAP.SINGLE;
 
-  #areAllTrue() {
-    if (!this.#values.every(v => v === true)) {
-      throw new Error(`Expected all values of '${this.#values}' to be 'true'.`);
-    }
-  }
+    const entries = Object.entries(ensurances).map(([name, ensurance]) => {
+      return [name, function(...args: any[]) {
+        const ctx = new EnsuranceContext([that.#values[0]], args);
+        if (!ensurance.predicate(ctx, that.#values[0], ...args)) {
+          throw new Error(ensurance.message(ctx))
+        }
+      }];
+    });
 
-  #areSomeTrue() {
-    if (!this.#values.some(v => v === true)) {
-      throw new Error(`Expected some values of '${this.#values}' to be 'true'.`);
-    }
-  }
-
-  #areAllFalse() {
-    if (!this.#values.every(v => v === false)) {
-      throw new Error(`Expected all values of '${this.#values}' to be 'false'.`);
-    }
-  }
-
-  #areSomeFalse() {
-    if (!this.#values.some(v => v === false)) {
-      throw new Error(`Expected some values of '${this.#values}' to be 'false'.`);
-    }
-  }
-
-  #areAll(other: any) {
-    if (!this.#values.every(v => v === other)) {
-      throw new Error(`Expected all values of '${this.#values}' to be '${other}'.`);
-    }
-  }
-
-  #areSome(other: any) {
-    if (!this.#values.some(v => v === other)) {
-      throw new Error(`Expected some values of '${this.#values}' to be '${other}'.`);
-    }
-  }
-
-  #areAllInRange(a: number, b: number) {
-    if (this.#values.some(v => typeof v !== 'number')) {
-      throw new Error(`Expected all values of '${this.#values}' to be numbers.`);
-    }
-
-    if (!this.#values.every(v => v >= a && v <= b)) {
-      throw new Error(`Expected all values of '${this.#values}' to be in [${a}, ${b}].`);
-    }
-  }
-
-  #areSomeInRange(a: number, b: number) {
-    if (this.#values.some(v => typeof v !== 'number')) {
-      throw new Error(`Expected all values of '${this.#values}' to be numbers.`);
-    }
-
-    if (!this.#values.some(v => v >= a && v <= b)) {
-      throw new Error(`Expected some values of '${this.#values}' to be in [${a}, ${b}].`);
-    }
-  }
-
-  #allEqual() {
-    if (!this.#values.every(v => v === this.#values[0])) {
-      throw new Error(`Expected all values of '${this.#values}' to be equal.`);
-    }
-  }
-
-  #someDifferent() {
-    if (new Set(this.#values).size !== this.#values.length) {
-      throw new Error(`Expected all values of '${this.#values}' to be different.`);
+    return Object.fromEntries(entries) as {
+      [K in keyof typeof ensurances]: (...args: any[]) => void;
     }
   }
   
