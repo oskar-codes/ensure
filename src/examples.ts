@@ -26,3 +26,6 @@ ensure(x === 1).is.true();
 ensure(x === 1).is.not.false();
 
 ensure(x, y).and(z).are.not.equal();
+
+ensure(x).is.greaterThan(1);
+ensure(x).is.strictlyGreaterThan(0);

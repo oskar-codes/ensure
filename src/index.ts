@@ -64,6 +64,22 @@ class Ensurable {
         predicate: (_, v, a, b) => v >= a && v <= b,
         message: ctx => `Expected ${ctx.each}<${ctx.values}> to ${ctx.not}be in [${ctx.args.at(0)}, ${ctx.args.at(1)}].`
       }),
+      greaterThan: new Ensurance({
+        predicate: (_, v, o) => v >= o,
+        message: ctx => `Expected ${ctx.each}<${ctx.values}> to ${ctx.not}be greater than or equal to <${ctx.args.at(0)}>.`
+      }),
+      strictlyGreaterThan: new Ensurance({
+        predicate: (_, v, o) => v > o,
+        message: ctx => `Expected ${ctx.each}<${ctx.values}> to ${ctx.not}be strictly greater than <${ctx.args.at(0)}>.`
+      }),
+      lessThan: new Ensurance({
+        predicate: (_, v, o) => v <= o,
+        message: ctx => `Expected ${ctx.each}<${ctx.values}> to ${ctx.not}be less than or equal to <${ctx.args.at(0)}>.`
+      }),
+      strictlyLessThan: new Ensurance({
+        predicate: (_, v, o) => v < o,
+        message: ctx => `Expected ${ctx.each}<${ctx.values}> to ${ctx.not}be strictly less than <${ctx.args.at(0)}>.`
+      }),
       defined: new Ensurance({
         predicate: (_, v) => v !== undefined && v !== null,
         message: ctx => `Expected ${ctx.each}<${ctx.values}> to ${ctx.not}be defined.`

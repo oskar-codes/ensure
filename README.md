@@ -3,7 +3,6 @@ A JavaScript/TypeScript prose assertion library.
 
 ## Examples
 ```js
-
 const x = 1;
 const y = 2;
 const z = 3;
@@ -31,4 +30,6 @@ ensure(x === 1).is.not.false();
 
 ensure(x, y).and(z).are.not.equal();
 
+ensure(x).is.greaterThan(1);
+ensure(x).is.strictlyGreaterThan(0);
 ```
