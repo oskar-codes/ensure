@@ -56,6 +56,14 @@ class Ensurable {
         predicate: (_, v) => v === false,
         message: ctx => `Expected ${ctx.each}<${ctx.values}> to ${ctx.not}be false.`
       }),
+      ofType: new Ensurance({
+        predicate: (_, v, t) => typeof v === t,
+        message: ctx => `Expected ${ctx.each}<${ctx.values}> to ${ctx.not}be of type <${ctx.args.at(0)}>.`
+      }),
+      instanciatedBy: new Ensurance({
+        predicate: (_, v, t) => v instanceof t,
+        message: ctx => `Expected ${ctx.each}<${ctx.values}> to ${ctx.not}be of instanciated by <${ctx.args.at(0)}>.`
+      }),
       equalTo: new Ensurance({
         predicate: (_, v, o) => v === o,
         message: ctx => `Expected ${ctx.each}<${ctx.values}> to ${ctx.not}be equal to <${ctx.args.at(0)}>.`

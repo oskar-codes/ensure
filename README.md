@@ -32,4 +32,9 @@ ensure(x, y).and(z).are.not.equal();
 
 ensure(x).is.greaterThan(1);
 ensure(x).is.strictlyGreaterThan(0);
+
+ensure(x).and(y).are.ofType('number');
+
+const date = new Date();
+ensure(date).is.instanciatedBy(Date);
 ```
