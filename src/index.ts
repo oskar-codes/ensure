@@ -39,6 +39,20 @@ class Ensurance {
   }
 }
 
+// Fluent-chain types using explicit ensurance key lists so 'not' can be a separate
+// property type without conflicting with index signatures.
+type SingleEnsuranceKey = keyof typeof Ensurable.ENSURANCES.SINGLE;
+
+type MultipleEnsuranceKey = keyof typeof Ensurable.ENSURANCES.MULTIPLE;
+
+type AllAreKeys = SingleEnsuranceKey | MultipleEnsuranceKey;
+
+type AreChain = { [K in AllAreKeys]: (...args: any[]) => { and: AreGetter } };
+type AreGetter = { [K in AllAreKeys]: (...args: any[]) => { and: AreGetter } } & { not: AreChain };
+
+type IsChain = { [K in SingleEnsuranceKey]: (...args: any[]) => { and: IsGetter } };
+type IsGetter = { [K in SingleEnsuranceKey]: (...args: any[]) => { and: IsGetter } } & { not: IsChain };
+
 class Ensurable {
   #values: any[];
   
@@ -108,7 +122,7 @@ class Ensurable {
   /**
    * Used for multiple values
    */
-  get are() {
+  get are(): AreGetter {
     return {
       ...this.#are(false),
       not: {
@@ -117,7 +131,7 @@ class Ensurable {
     }
   }
 
-  #are(negated: boolean) {
+  #are(negated: boolean): AreChain {
     const that = this;
     const ensurances = {
       ...Ensurable.ENSURANCES.SINGLE,
@@ -140,18 +154,20 @@ class Ensurable {
           throw new Error(ensurance.message(ctx))
         }
 
+        return {
+          and: that.are
+        }
+
       }];
     });
 
-    return Object.fromEntries(entries) as {
-      [K in keyof typeof ensurances]: (...args: any[]) => void;
-    }
+    return Object.fromEntries(entries) as AreChain;
   }
 
   /**
    * Used for a single value
    */
-  get is() {
+  get is(): IsGetter {
     return {
       ...this.#is(false),
       not: {
@@ -160,7 +176,7 @@ class Ensurable {
     }
   }
 
-  #is(negated: boolean) {
+  #is(negated: boolean): IsChain {
     const that = this;
     const ensurances = Ensurable.ENSURANCES.SINGLE;
 
@@ -172,12 +188,14 @@ class Ensurable {
         if (!valid !== negated) {
           throw new Error(ensurance.message(ctx))
         }
+
+        return {
+          and: that.is
+        }
       }];
     });
 
-    return Object.fromEntries(entries) as {
-      [K in keyof typeof ensurances]: (...args: any[]) => void;
-    }
+    return Object.fromEntries(entries) as IsChain
   }
   
   and(...other: any[]) {

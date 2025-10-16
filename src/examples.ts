@@ -34,3 +34,7 @@ ensure(x).and(y).are.ofType('number');
 
 const date = new Date();
 ensure(date).is.instanciatedBy(Date);
+
+ensure(x).is.defined().and.greaterThan(0);
+ensure(x).is.defined().and.equalTo(1).and.not.equalTo(y);
+ensure(z).and(t).are.equal().and.not.ofType('string');
