@@ -1,12 +1,12 @@
 {
   "name": "@oskar-codes/ensure",
-  "version": "1.1.4",
+  "version": "1.1.6",
   "description": "Ensure your code",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "publish": "tsc && npm publish"
+    "deploy": "tsc && npm publish"
   },
   "author": "Oskar Zanota",
   "license": "ISC",
